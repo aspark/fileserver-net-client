@@ -92,6 +92,8 @@ namespace Aspark.FileServer.Client.FS
 
         public bool Exists(string fileName)
         {
+            var content = Parser.ConvertToArrayBytes("EXISTS", fileName);
+
             var result = _conn.Send(Parser.ConvertToArrayBytes("EXISTS", fileName));
 
             HandleError(result);

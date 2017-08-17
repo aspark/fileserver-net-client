@@ -40,7 +40,7 @@ namespace Aspark.FileServer.Client.Common
             if (_user != null && _pwd != null)
             {
                 var time = ((long)(DateTime.UtcNow - DateTime.Parse("1970-01-01")).TotalSeconds).ToString();
-                var bytes = Encoding.ASCII.GetBytes(_pwd + time);
+                var bytes = Encoding.UTF8.GetBytes(_pwd + time);
                 var md5 = string.Join("", MD5.Create().ComputeHash(bytes, 0, bytes.Length).Select(x => x.ToString("x2").ToLower()));
                 var result = Send(Parser.ConvertToArrayBytes("AUTH", _user, md5, time));
 

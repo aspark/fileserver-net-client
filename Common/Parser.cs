@@ -10,15 +10,17 @@ namespace Aspark.FileServer.Client.Common
     {
         public static byte[] ConvertToSimpleStringBytes(string content)
         {
-            return Encoding.ASCII.GetBytes("+" + content + "\r\n");
+            return Encoding.UTF8.GetBytes("+" + content + "\r\n");
         }
 
         public static byte[] ConvertToBulkStringBytes(string content)
         {
             if (content == null)
-                return Encoding.ASCII.GetBytes("$-1\r\n");
+                return Encoding.UTF8.GetBytes("$-1\r\n");
 
-            return Encoding.ASCII.GetBytes("$" + content.Length.ToString() + "\r\n" + content + "\r\n");
+            var bytes = Encoding.UTF8.GetBytes(content);
+
+            return Encoding.UTF8.GetBytes("$" + bytes.Length.ToString() + "\r\n").Concat(bytes).Concat(new byte[] { (byte)'\r', (byte)'\n' }).ToArray();
         }
 
         public static byte[] ConvertToBulkBytes(byte[] content)
@@ -27,7 +29,7 @@ namespace Aspark.FileServer.Client.Common
             {
                 var bs = new List<byte>();
 
-                bs.AddRange(Encoding.ASCII.GetBytes("!" + content.Length.ToString() + "\r\n"));
+                bs.AddRange(Encoding.UTF8.GetBytes("!" + content.Length.ToString() + "\r\n"));
 
                 bs.AddRange(content);
 
@@ -37,7 +39,7 @@ namespace Aspark.FileServer.Client.Common
             }
             else
             {
-                return Encoding.ASCII.GetBytes("!-1\r\n");
+                return Encoding.UTF8.GetBytes("!-1\r\n");
             }
         }
 
@@ -53,7 +55,7 @@ namespace Aspark.FileServer.Client.Common
                 }
             }
 
-            return Encoding.ASCII.GetBytes("*" + bs.Count.ToString() + "\r\n").Concat(bs.SelectMany(b => b)).ToArray();
+            return Encoding.UTF8.GetBytes("*" + bs.Count.ToString() + "\r\n").Concat(bs.SelectMany(b => b)).ToArray();
         }
 
         public static byte[] ConvertToArrayBytes(string cmd, string[] args, byte[] content)
@@ -70,7 +72,7 @@ namespace Aspark.FileServer.Client.Common
 
             bs.Add(ConvertToBulkBytes(content));
 
-            return Encoding.ASCII.GetBytes("*" + bs.Count.ToString() + "\r\n").Concat(bs.SelectMany(b => b)).ToArray();
+            return Encoding.UTF8.GetBytes("*" + bs.Count.ToString() + "\r\n").Concat(bs.SelectMany(b => b)).ToArray();
         }
 
 
@@ -80,15 +82,15 @@ namespace Aspark.FileServer.Client.Common
             switch (type)
             {
                 case '-':
-                    return new ErrorBlock(Encoding.ASCII.GetString(ReadLine(ns)));
+                    return new ErrorBlock(Encoding.UTF8.GetString(ReadLine(ns)));
                 case '+':
-                    return new StringBlock(Encoding.ASCII.GetString(ReadLine(ns)));
+                    return new StringBlock(Encoding.UTF8.GetString(ReadLine(ns)));
                 case '$':
-                    return new StringBlock(Encoding.ASCII.GetString(ReadByLength(ns)));
+                    return new StringBlock(Encoding.UTF8.GetString(ReadByLength(ns)));
                 case '!':
                     return new BytesBlock(ReadByLength(ns));
                 case '*':
-                    var count = int.Parse(Encoding.ASCII.GetString(ReadLine(ns)));
+                    var count = int.Parse(Encoding.UTF8.GetString(ReadLine(ns)));
                     var blks = new List<BlockBase>();
                     for (var i = 0; i < count; i++)
                     {
@@ -97,7 +99,7 @@ namespace Aspark.FileServer.Client.Common
 
                     return new ArrayBlock(blks.ToArray());
                 case ':':
-                    return new Int64Block(long.Parse(Encoding.ASCII.GetString(ReadLine(ns))));
+                    return new Int64Block(long.Parse(Encoding.UTF8.GetString(ReadLine(ns))));
             }
 
             return null;
@@ -127,7 +129,7 @@ namespace Aspark.FileServer.Client.Common
         public static byte[] ReadByLength(NetworkStream ns)
         {
             var line = ReadLine(ns);
-            var length = int.Parse(Encoding.ASCII.GetString(line));//.Skip(1).ToArray()
+            var length = int.Parse(Encoding.UTF8.GetString(line));//.Skip(1).ToArray()
             var bytes = new byte[length];
             var index = 0;
             var buff = new byte[1024];
